@@ -14,7 +14,7 @@ import {
   buildStatefulPreimage,
   buildContinuationOutput,
   serializeState,
-} from 'runar-testing/src/mock-preimage.js';
+} from 'runar-testing/dist/mock-preimage.js';
 import type {
   ExecutionRequest, ExecutionResponse,
   OpcodeSnapshot, ScriptOpcode, ExecutionTrace,
