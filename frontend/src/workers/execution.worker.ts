@@ -335,7 +335,7 @@ function createMockPreimage(
 function buildUnlockingScript(
   methodCall: MethodCallDef,
   lockingScript: LockingScript,
-): string {
+): { unlockHex: string; statefulLockingScriptHex: string | undefined; outputs: Array<{ satoshis: number; lockingScript: LockingScript }> } {
   let script = '';
   const lockTime = methodCall.mockLocktime;
 

@@ -4,14 +4,12 @@ import { AstTab } from './AstTab';
 import { IrTab } from './IrTab';
 import { ScriptTab } from './ScriptTab';
 import { ExecutionTab } from './ExecutionTab';
-import { DeployTab } from './DeployTab';
 
 const TABS = [
   { id: 'ast', label: 'AST' },
   { id: 'ir', label: 'IR' },
   { id: 'script', label: 'Script' },
   { id: 'execution', label: 'Execution' },
-  { id: 'deploy', label: 'Deploy & Call' },
 ];
 
 export function OutputPane() {
@@ -25,7 +23,6 @@ export function OutputPane() {
         {activeTab === 'ir' && <IrTab />}
         {activeTab === 'script' && <ScriptTab />}
         {activeTab === 'execution' && <ExecutionTab />}
-        {activeTab === 'deploy' && <DeployTab />}
       </div>
     </div>
   );

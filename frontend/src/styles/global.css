@@ -125,3 +125,65 @@
     background: rgba(255, 255, 255, 0.2);
   }
 }
+
+/* Docs modal content styles */
+.docs-content h4 {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-top: 1rem;
+  margin-bottom: 0.375rem;
+}
+
+.docs-text ul,
+.docs-text ol {
+  padding-left: 1.25rem;
+  margin: 0.375rem 0;
+}
+
+.docs-text ul {
+  list-style-type: disc;
+}
+
+.docs-text ol {
+  list-style-type: decimal;
+}
+
+.docs-text li {
+  margin: 0.25rem 0;
+}
+
+.docs-text code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  background: var(--color-neutral-800);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  color: var(--color-accent-400);
+}
+
+.docs-text table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-size: 0.8125rem;
+}
+
+.docs-text th,
+.docs-text td {
+  text-align: left;
+  padding: 0.375rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.docs-text th {
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.docs-text td code {
+  font-size: 0.6875rem;
+}
