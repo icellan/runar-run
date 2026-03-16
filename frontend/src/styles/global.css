@@ -1,0 +1,127 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+@theme {
+  /* Fonts */
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Accent scale (gold/amber) */
+  --color-accent-50: #fdf8ef;
+  --color-accent-100: #faecd3;
+  --color-accent-200: #f4d6a5;
+  --color-accent-300: #edc06e;
+  --color-accent-400: #e5a832;
+  --color-accent-500: #d4940a;
+  --color-accent-600: #b87a08;
+  --color-accent-700: #995f0a;
+  --color-accent-800: #7d4c10;
+  --color-accent-900: #683e12;
+
+  /* Neutral scale (dark-first) */
+  --color-neutral-950: #0a0a0a;
+  --color-neutral-900: #0d0d0d;
+  --color-neutral-850: #111111;
+  --color-neutral-800: #141414;
+  --color-neutral-700: #1a1a1a;
+  --color-neutral-600: #222222;
+  --color-neutral-500: #444444;
+  --color-neutral-400: #666666;
+  --color-neutral-300: #888888;
+  --color-neutral-200: #aaaaaa;
+  --color-neutral-100: #d4d4d4;
+  --color-neutral-50: #f0ede8;
+
+  /* Semantic colors (dark mode) */
+  --color-bg: var(--color-neutral-950);
+  --color-surface: var(--color-neutral-850);
+  --color-surface-alt: var(--color-neutral-800);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.15);
+  --color-text: var(--color-neutral-50);
+  --color-text-secondary: var(--color-neutral-200);
+  --color-text-tertiary: var(--color-neutral-400);
+
+  /* Semantic status */
+  --color-info: #3b82f6;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-success: #10b981;
+
+  /* Spacing base */
+  --spacing: 0.25rem;
+
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+
+  /* Animations */
+  --animate-fade-in: fade-in 0.3s ease-out;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+/* Opcode category colors for Script tab */
+:root {
+  --op-push: #888888;
+  --op-arithmetic: #3b82f6;
+  --op-bitwise: #a855f7;
+  --op-crypto: #f59e0b;
+  --op-flow: #f97316;
+  --op-locktime: #14b8a6;
+  --op-stack: #6ee7b7;
+  --op-data: #c084fc;
+}
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  html {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: rgba(212, 148, 10, 0.3);
+    color: var(--color-text);
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}

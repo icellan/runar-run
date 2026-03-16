@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   version="1.1"
+   id="svg1"
+   width="360"
+   height="360"
+   viewBox="0 0 360 360"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <rect
+     style="fill:#000000;fill-opacity:1"
+     id="rect12"
+     width="360"
+     height="360"
+     x="0.4078126"
+     y="-0.71062517" />
+  <path
+     style="display:none;fill:#000000"
+     id="rect11"
+     width="320"
+     height="320"
+     x="-0.29819918"
+     y="0.1696682"
+     d="M 51.485339,0.1696682 H 269.89662 A 49.805184,49.805184 45 0 1 319.7018,49.974852 l 0,219.895048 a 50.299772,50.299772 135 0 1 -50.29977,50.29977 H 50.99075 A 51.288949,51.288949 45 0 1 -0.29819918,268.88072 V 51.953206 A 51.783538,51.783538 135 0 1 51.485339,0.1696682 Z"
+     transform="matrix(1.125,0,0,1.125,0.0372749,-0.02120852)" />
+  <g
+     id="g1">
+    <path
+       style="fill:#d4940a;fill-opacity:1;stroke-width:2.21196"
+       d="m 176.309,257.54101 0.17777,-203.007641 c 3e-5,-0.03534 24.27256,-0.07352 24.27256,-0.07352 l 78.64326,58.170231 -28.73022,59.19075 59.63197,85.70242 c 0,0 -31.07334,0.0284 -32.16549,-1.60717 l -55.87532,-83.67781 c 0.0451,0.0657 27.11611,-55.85891 27.11611,-55.85891 L 200.78039,83.140249 200.3541,257.2607 c 0,0 -23.62848,0.89919 -24.0451,0.28031 z"
+       id="path2" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:289.545px;font-family:Krungthep;-inkscape-font-specification:Krungthep;writing-mode:lr-tb;direction:ltr;fill:#d4940a;fill-opacity:1;stroke-width:1.50805"
+       x="49.401901"
+       y="237.61401"
+       id="text11"
+       transform="scale(0.82839198,1.207158)"><tspan
+         id="tspan11"
+         x="49.401901"
+         y="237.61401"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Krungthep;-inkscape-font-specification:Krungthep;fill:#d4940a;fill-opacity:1;stroke-width:1.50805">&gt;_</tspan></text>
+  </g>
+</svg>

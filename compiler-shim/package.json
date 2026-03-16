@@ -1,0 +1,10 @@
+{
+  "name": "compiler-shim",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "main": "src/ts-morph-shim.ts",
+  "dependencies": {
+    "typescript": "^5.8.3"
+  }
+}
