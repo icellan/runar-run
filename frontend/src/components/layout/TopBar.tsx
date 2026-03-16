@@ -32,7 +32,7 @@ export function TopBar() {
     <header className="flex items-center h-11 px-4 border-b border-border bg-surface shrink-0">
       {/* Logo */}
       <div className="flex items-center gap-2 mr-6">
-        <span className="text-accent-500 font-semibold text-base tracking-tight">Runar</span>
+        <span className="text-text font-semibold text-base tracking-tight">R<span className="text-accent-500">ú</span>nar</span>
         <span className="text-text-tertiary text-sm font-medium">Playground</span>
       </div>
 

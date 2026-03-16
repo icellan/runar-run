@@ -42,8 +42,8 @@ export function DocsModal({ open, onClose }: DocsModalProps) {
         <div className="flex-1 overflow-auto px-6 py-5 docs-content">
           <Section title="Overview">
             <p>
-              The Runar Playground is an interactive browser-based IDE for writing, compiling, and
-              debugging Runar smart contracts for Bitcoin SV. Everything runs in your browser — there
+              The Rúnar Playground is an interactive browser-based IDE for writing, compiling, and
+              debugging Rúnar smart contracts for Bitcoin SV. Everything runs in your browser — there
               is no backend server involved in compilation or execution. The compiler and script
               executor run inside Web Workers so the UI stays responsive.
             </p>
@@ -51,7 +51,7 @@ export function DocsModal({ open, onClose }: DocsModalProps) {
 
           <Section title="Supported Languages">
             <p>
-              Runar contracts can be written in six languages. Use the language selector in the
+              Rúnar contracts can be written in six languages. Use the language selector in the
               top bar to switch between them:
             </p>
             <ul>
