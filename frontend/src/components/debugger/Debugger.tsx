@@ -256,11 +256,9 @@ export function Debugger({
         {isStateful && onMockLocktimeChange && (
           <div className="flex items-center gap-2 text-[11px]">
             <span className="text-text-tertiary shrink-0">Locktime:</span>
-            <input
-              type="number"
-              min={0}
-              value={mockLocktime ?? 0}
-              onChange={(e) => onMockLocktimeChange(Number(e.target.value) || 0)}
+            <DeferredInput
+              value={String(mockLocktime ?? 0)}
+              onCommit={(raw) => onMockLocktimeChange(Number(raw) || 0)}
               className="w-24 h-5 px-1.5 text-xs font-mono bg-bg border border-border rounded
                          text-text-secondary focus:border-accent-500/50 focus:outline-none transition-colors"
             />

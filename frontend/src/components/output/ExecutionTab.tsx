@@ -264,10 +264,11 @@ export function ExecutionTab() {
     setLoading(false);
   }, [scriptHex, unlockScriptHexOverride, methodCallDef]);
 
+  // Re-execute when inputs change
   useEffect(() => {
     setTrace(null);
     if (scriptHex && methodCallDef) {
-      runExecution();
+      runExecution().catch(() => {});
     }
   }, [scriptHex, unlockScriptHexOverride, methodCallDef]); // eslint-disable-line react-hooks/exhaustive-deps
 

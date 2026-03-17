@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface InputsPanelProps {
   unlockScript: string;
@@ -8,6 +8,22 @@ interface InputsPanelProps {
 
 export function InputsPanel({ unlockScript, onChange, onRerun }: InputsPanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const [local, setLocal] = useState(unlockScript);
+  const committed = useRef(unlockScript);
+
+  useEffect(() => {
+    if (unlockScript !== committed.current) {
+      setLocal(unlockScript);
+      committed.current = unlockScript;
+    }
+  }, [unlockScript]);
+
+  const commit = () => {
+    if (local !== committed.current) {
+      committed.current = local;
+      onChange(local);
+    }
+  };
 
   return (
     <div className="border-b border-border shrink-0">
@@ -27,8 +43,9 @@ export function InputsPanel({ unlockScript, onChange, onRerun }: InputsPanelProp
             Paste raw hex here to override the auto-generated unlock script. Clear to use the example's method call with real signatures.
           </div>
           <textarea
-            value={unlockScript}
-            onChange={(e) => onChange(e.target.value)}
+            value={local}
+            onChange={(e) => setLocal(e.target.value)}
+            onBlur={commit}
             placeholder="Raw unlocking script hex (leave empty for auto-generated)"
             className="w-full h-14 p-2 bg-bg border border-border rounded text-xs font-mono
                        text-text-secondary placeholder:text-text-tertiary resize-none
@@ -36,15 +53,15 @@ export function InputsPanel({ unlockScript, onChange, onRerun }: InputsPanelProp
           />
           <div className="flex gap-2">
             <button
-              onClick={onRerun}
+              onClick={() => { commit(); onRerun(); }}
               className="px-2 py-1 text-[11px] text-text-secondary border border-border
                          rounded hover:border-border-strong hover:text-text transition-colors"
             >
               Re-execute
             </button>
-            {unlockScript && (
+            {local && (
               <button
-                onClick={() => onChange('')}
+                onClick={() => { setLocal(''); committed.current = ''; onChange(''); }}
                 className="px-2 py-1 text-[11px] text-text-tertiary border border-border
                            rounded hover:border-border-strong hover:text-text transition-colors"
               >

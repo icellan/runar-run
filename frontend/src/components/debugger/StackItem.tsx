@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 
 interface StackItemProps {
   index: number;
@@ -42,7 +42,7 @@ function tryDecodeInt(bytes: number[]): string | null {
   return value.toString();
 }
 
-export function StackItem({ index, bytes, isTop }: StackItemProps) {
+export const StackItem = memo(function StackItem({ index, bytes, isTop }: StackItemProps) {
   const hex = useMemo(() => bytesToHex(bytes), [bytes]);
   const utf8 = useMemo(() => tryDecodeUtf8(bytes), [bytes]);
   const intVal = useMemo(() => tryDecodeInt(bytes), [bytes]);
@@ -88,4 +88,4 @@ export function StackItem({ index, bytes, isTop }: StackItemProps) {
       </span>
     </div>
   );
-}
+});

@@ -59,6 +59,20 @@ export class CompilerBridge {
       this.worker.addEventListener('message', handler);
     });
 
+    this.worker.addEventListener('error', (e) => {
+      e.preventDefault();
+      console.error('[compiler-worker]', e.message || e);
+      if (this.pendingResolve) {
+        this.pendingResolve({
+          anf: null,
+          contract: null,
+          diagnostics: [{ message: e.message || 'Worker error', severity: 'error' } as CompilerDiagnostic],
+          success: false,
+        });
+        this.pendingResolve = null;
+      }
+    });
+
     this.worker.postMessage({ type: 'init' } satisfies CompilerRequest);
   }
 

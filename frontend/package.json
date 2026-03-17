@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@bsv/sdk": "^2.0.7",
@@ -18,19 +19,25 @@
     "monaco-editor": "^0.52.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "runar-compiler": "^0.3.0",
-    "runar-lang": "^0.3.0",
-    "runar-ir-schema": "^0.3.0",
-    "runar-testing": "^0.3.0"
+    "react-window": "^2.2.7",
+    "runar-compiler": "^0.3.2",
+    "runar-ir-schema": "^0.3.2",
+    "runar-lang": "^0.3.2",
+    "runar-testing": "^0.3.2"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/lz-string": "^1.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/react-window": "^2.0.0",
     "@vitejs/plugin-react": "^4.5.2",
+    "jsdom": "^29.0.0",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.8.3",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vitest": "^4.1.0"
   }
 }

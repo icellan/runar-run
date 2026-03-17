@@ -1,4 +1,5 @@
 import { useCompiler, type CompileStatus } from '../../contexts/CompilerContext';
+import { version as runarVersion } from 'runar-compiler/package.json';
 
 const STATUS_CONFIG: Record<CompileStatus, { color: string; label: string }> = {
   idle: { color: 'bg-neutral-500', label: 'Ready' },
@@ -23,6 +24,9 @@ export function StatusBar() {
           <span className="text-warning">{warningCount} warning{warningCount !== 1 ? 's' : ''}</span>
         )}
       </div>
+      <span className="ml-auto text-[10px] text-text-tertiary">
+        Runar v{runarVersion}
+      </span>
     </footer>
   );
 }

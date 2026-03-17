@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef, type ChangeEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useEditor } from '../../contexts/EditorContext';
 import { useCompiler } from '../../contexts/CompilerContext';
 import { ALICE } from '../../examples/test-keys';
@@ -7,6 +7,41 @@ interface PropertyInfo {
   name: string;
   type: { kind: string; name?: string };
   readonly: boolean;
+}
+
+/** Input that uses local state while editing and only commits on blur or Enter */
+function DeferredInput({ value, onCommit, className }: {
+  value: string;
+  onCommit: (value: string) => void;
+  className?: string;
+}) {
+  const [local, setLocal] = useState(value);
+  const committed = useRef(value);
+
+  useEffect(() => {
+    if (value !== committed.current) {
+      setLocal(value);
+      committed.current = value;
+    }
+  }, [value]);
+
+  const commit = () => {
+    if (local !== committed.current) {
+      committed.current = local;
+      onCommit(local);
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      value={local}
+      onChange={(e: ChangeEvent<HTMLInputElement>) => setLocal(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e: ReactKeyboardEvent) => { if (e.key === 'Enter') commit(); }}
+      className={className}
+    />
+  );
 }
 
 /** Generate a sensible default value for a given Rúnar type */
@@ -106,10 +141,9 @@ export function ConstructorArgs() {
             <span className="text-[10px] text-text-tertiary bg-surface-alt px-1 rounded shrink-0">
               {typeLabel(value)}
             </span>
-            <input
-              type="text"
+            <DeferredInput
               value={displayValue(value)}
-              onChange={(e) => updateArg(key, e.target.value)}
+              onCommit={(raw) => updateArg(key, raw)}
               className="flex-1 min-w-0 h-6 px-1.5 text-xs font-mono bg-bg border border-border rounded
                          text-text-secondary focus:border-accent-500/50 focus:outline-none transition-colors"
             />

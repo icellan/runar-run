@@ -128,6 +128,24 @@ export class ExecutionBridge {
       this.worker.addEventListener('message', handler);
     });
 
+    // Suppress worker-level errors (e.g. DataCloneError from non-serializable
+    // error objects thrown by @bsv/sdk). These are already handled via the
+    // message protocol; without this handler Vite's overlay intercepts them.
+    this.worker.addEventListener('error', (e) => {
+      e.preventDefault();
+      console.error('[execution-worker]', e.message || e);
+      if (this.pendingResolve) {
+        this.pendingResolve({
+          snapshots: [],
+          unlockOpcodes: [],
+          lockOpcodes: [],
+          success: false,
+          error: e.message || 'Worker error',
+        });
+        this.pendingResolve = null;
+      }
+    });
+
     this.worker.postMessage({ type: 'init' } satisfies ExecutionRequest);
   }
 
