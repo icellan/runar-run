@@ -51,7 +51,7 @@ export function DocsModal({ open, onClose }: DocsModalProps) {
 
           <Section title="Supported Languages">
             <p>
-              Rúnar contracts can be written in six languages. Use the language selector in the
+              Rúnar contracts can be written in seven languages. Use the language selector in the
               top bar to switch between them:
             </p>
             <ul>
@@ -61,6 +61,7 @@ export function DocsModal({ open, onClose }: DocsModalProps) {
               <li><strong>Python</strong> — Python-flavored syntax</li>
               <li><strong>Go</strong> — Go-flavored syntax</li>
               <li><strong>Rust</strong> — Rust-flavored syntax</li>
+              <li><strong>Zig</strong> — Zig-flavored syntax with struct-based contracts</li>
             </ul>
             <p>
               All languages compile to the same Bitcoin Script output. The language choice only
@@ -378,6 +379,7 @@ export function DocsModal({ open, onClose }: DocsModalProps) {
               <li><code>.runar.py</code> / <code>.py</code> — Python</li>
               <li><code>.runar.go</code> / <code>.go</code> — Go</li>
               <li><code>.runar.rs</code> / <code>.rs</code> — Rust</li>
+              <li><code>.runar.zig</code> / <code>.zig</code> — Zig</li>
             </ul>
           </Section>
 

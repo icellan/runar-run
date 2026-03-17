@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import { EXAMPLES, type MethodCall } from '../examples';
 import { decodeFromHash } from '../lib/sharing-client';
 
-export type Language = 'typescript' | 'solidity' | 'move' | 'python' | 'go' | 'rust';
+export type Language = 'typescript' | 'solidity' | 'move' | 'python' | 'go' | 'rust' | 'zig';
 
 interface EditorState {
   source: string;
@@ -34,6 +34,7 @@ const LANGUAGE_EXTENSIONS: Record<Language, string> = {
   python: 'py',
   go: 'go',
   rust: 'rs',
+  zig: 'zig',
 };
 
 const DEFAULT_EXAMPLE = EXAMPLES[0]!;
@@ -80,11 +81,28 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
   const setLanguage = useCallback((language: Language) => {
     const ext = LANGUAGE_EXTENSIONS[language];
-    setState(prev => ({
-      ...prev,
-      language,
-      fileName: `Contract.runar.${ext}`,
-    }));
+    setState(prev => {
+      // If the current source already belongs to an example in the new language, keep it
+      const currentExample = EXAMPLES.find(e => e.source === prev.source && e.language === language);
+      if (currentExample) {
+        return { ...prev, language, fileName: `Contract.runar.${ext}` };
+      }
+      // Otherwise load the first example for the new language, or keep the source as-is
+      const firstExample = EXAMPLES.find(e => e.language === language);
+      if (firstExample) {
+        return {
+          source: firstExample.source,
+          language,
+          fileName: `Contract.runar.${ext}`,
+          constructorArgs: firstExample.constructorArgs,
+          methodCall: firstExample.methodCall,
+          unlockScriptHexOverride: '',
+          description: firstExample.description,
+          mockLocktime: 0,
+        };
+      }
+      return { ...prev, language, fileName: `Contract.runar.${ext}` };
+    });
   }, []);
 
   const setConstructorArgs = useCallback((args: Record<string, bigint | boolean | string>) => {
