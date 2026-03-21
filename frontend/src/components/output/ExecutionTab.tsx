@@ -92,6 +92,7 @@ export function ExecutionTab() {
     unlockScriptHexOverride, setUnlockScriptHexOverride,
     constructorArgs, description,
     mockLocktime, setMockLocktime,
+    source,
   } = useEditor();
   const bridgeRef = useRef<ExecutionBridge | null>(null);
   const [trace, setTrace] = useState<ExecutionTrace | null>(null);
@@ -295,37 +296,60 @@ export function ExecutionTab() {
   if (!result?.success) {
     const errors = result?.diagnostics.filter(d => d.severity === 'error') ?? [];
     const warnings = result?.diagnostics.filter(d => d.severity === 'warning') ?? [];
+    const sourceLines = source.split('\n');
+
+    const renderDiagnostic = (d: typeof errors[number], i: number, kind: 'error' | 'warning') => {
+      const loc = (d as { loc?: { line?: number; column?: number } }).loc;
+      const colorClass = kind === 'error' ? 'text-danger' : 'text-warning';
+
+      return (
+        <div key={`${kind[0]}${i}`} className="space-y-1">
+          <div className="flex gap-2 text-xs">
+            <span className={`${colorClass} shrink-0`}>{kind}</span>
+            {loc?.line && (
+              <span className="text-text-tertiary shrink-0">L{loc.line}:{loc.column ?? 0}</span>
+            )}
+            <span className="text-text-secondary">{d.message}</span>
+          </div>
+          {loc?.line && (
+            <div className="ml-2 font-mono text-[11px] border-l-2 border-border pl-2">
+              {(() => {
+                const line = loc.line;
+                const start = Math.max(0, line - 3);
+                const end = Math.min(sourceLines.length, line + 2);
+                return sourceLines.slice(start, end).map((text, idx) => {
+                  const lineNum = start + idx + 1;
+                  const isErrorLine = lineNum === line;
+                  return (
+                    <div
+                      key={lineNum}
+                      className={`flex ${isErrorLine ? 'bg-danger/10 text-danger rounded' : ''}`}
+                    >
+                      <span className="text-text-tertiary w-8 text-right shrink-0 select-none pr-2">
+                        {lineNum}
+                      </span>
+                      <span className={isErrorLine ? 'text-danger' : 'text-text-tertiary'}>
+                        {text || ' '}
+                      </span>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
+        </div>
+      );
+    };
+
     return (
       <div className="h-full flex flex-col">
         <div className="px-3 py-2 border-b border-border text-xs text-text-tertiary">
           {errors.length} error{errors.length !== 1 ? 's' : ''}
           {warnings.length > 0 && `, ${warnings.length} warning${warnings.length !== 1 ? 's' : ''}`}
         </div>
-        <div className="flex-1 overflow-auto p-3 space-y-1.5">
-          {errors.map((d, i) => {
-            const loc = (d as { location?: { line?: number; column?: number } }).location;
-            return (
-              <div key={`e${i}`} className="flex gap-2 text-xs">
-                <span className="text-danger shrink-0">error</span>
-                {loc?.line && (
-                  <span className="text-text-tertiary shrink-0">L{loc.line}:{loc.column ?? 0}</span>
-                )}
-                <span className="text-text-secondary">{d.message}</span>
-              </div>
-            );
-          })}
-          {warnings.map((d, i) => {
-            const loc = (d as { location?: { line?: number; column?: number } }).location;
-            return (
-              <div key={`w${i}`} className="flex gap-2 text-xs">
-                <span className="text-warning shrink-0">warn</span>
-                {loc?.line && (
-                  <span className="text-text-tertiary shrink-0">L{loc.line}:{loc.column ?? 0}</span>
-                )}
-                <span className="text-text-secondary">{d.message}</span>
-              </div>
-            );
-          })}
+        <div className="flex-1 overflow-auto p-3 space-y-3">
+          {errors.map((d, i) => renderDiagnostic(d, i, 'error'))}
+          {warnings.map((d, i) => renderDiagnostic(d, i, 'warning'))}
         </div>
       </div>
     );

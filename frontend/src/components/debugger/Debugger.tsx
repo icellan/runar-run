@@ -1,5 +1,8 @@
-import { useState, useCallback, useEffect, useRef, type ChangeEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, type ChangeEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { ExecutionTrace, MethodCallDef, MethodArg } from '../../lib/execution-bridge';
+import { useLocalStorage } from '../../lib/use-local-storage';
+import { useCompiler } from '../../contexts/CompilerContext';
+import { useEditor } from '../../contexts/EditorContext';
 
 /** Input that uses local state while editing and only commits on blur or Enter */
 function DeferredInput({ value, onCommit, className }: {
@@ -82,10 +85,42 @@ export function Debugger({
 }: DebuggerProps) {
   const [currentStep, setCurrentStep] = useState(-1);
   const [playing, setPlaying] = useState(false);
-  const [speed, setSpeed] = useState(200);
-  const [skipInactive, setSkipInactive] = useState(true);
+  const [speed, setSpeed] = useLocalStorage('runar:debugger:speed', 200);
+  const [skipInactive, setSkipInactive] = useLocalStorage('runar:debugger:skipInactive', true);
+  const [showAnnotations, setShowAnnotations] = useLocalStorage('runar:debugger:showAnnotations', false);
   const playInterval = useRef<ReturnType<typeof setInterval>>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Build source line annotations from the compiler's source map
+  const { result: compilerResult } = useCompiler();
+  const { source } = useEditor();
+
+  interface SourceMapping {
+    opcodeIndex: number;
+    line: number;
+  }
+
+  const annotations = useMemo(() => {
+    if (!showAnnotations) return undefined;
+    const artifact = compilerResult?.artifact as { sourceMap?: { mappings?: SourceMapping[] } } | undefined;
+    const mappings = artifact?.sourceMap?.mappings;
+    if (!mappings || mappings.length === 0) return undefined;
+
+    const sourceLines = source.split('\n');
+    const map = new Map<number, string>();
+
+    let lastLine = -1;
+    for (const m of mappings) {
+      if (m.line !== lastLine && m.line >= 1 && m.line <= sourceLines.length) {
+        const lineText = sourceLines[m.line - 1]?.trim();
+        if (lineText) {
+          map.set(m.opcodeIndex, `L${m.line}: ${lineText}`);
+        }
+        lastLine = m.line;
+      }
+    }
+    return map;
+  }, [showAnnotations, compilerResult?.artifact, source]);
 
   const totalSteps = trace?.snapshots.length ?? 0;
   const snapshot = currentStep >= 0 ? trace?.snapshots[currentStep] : undefined;
@@ -286,12 +321,14 @@ export function Debugger({
           playing={playing}
           speed={speed}
           skipInactive={skipInactive}
+          showAnnotations={showAnnotations}
           onReset={reset}
           onPrev={prev}
           onNext={next}
           onPlay={play}
           onSpeedChange={setSpeed}
           onSkipInactiveChange={setSkipInactive}
+          onShowAnnotationsChange={setShowAnnotations}
         />
       )}
 
@@ -299,7 +336,7 @@ export function Debugger({
       {hasScript ? (
         <div className="flex-1 flex min-h-0">
           <div className="w-1/2 border-r border-border overflow-auto">
-            <ScriptPanel trace={trace} currentStep={currentStep} />
+            <ScriptPanel trace={trace} currentStep={currentStep} annotations={annotations} />
           </div>
           <div className="w-1/2 overflow-auto">
             <StackPanel snapshot={snapshot ?? null} />

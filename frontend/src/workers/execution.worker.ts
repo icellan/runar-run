@@ -129,9 +129,12 @@ function serializeStateField(value: string, type: string): string {
       return (value || '00'.repeat(32)).padEnd(64, '0').slice(0, 64);
     case 'Point':
       return (value || '00'.repeat(64)).padEnd(128, '0').slice(0, 128);
-    default:
-      // ByteString, Ripemd160, Addr, etc — variable length, no padding
-      return value || '';
+    default: {
+      // ByteString, Ripemd160, Addr, etc — variable length with push-data prefix
+      const data = value || '';
+      if (data.length === 0) return '00';
+      return encodePushData(data);
+    }
   }
 }
 
@@ -554,7 +557,13 @@ self.addEventListener('message', (e: MessageEvent<ExecutionRequest>) => {
 
   if (msg.type === 'execute') {
     try {
-      let lockingScript = LockingScript.fromHex(msg.lockingScriptHex);
+      let lockingScript: LockingScript;
+      try {
+        lockingScript = LockingScript.fromHex(msg.lockingScriptHex);
+      } catch (e) {
+        const hexPreview = msg.lockingScriptHex?.slice(0, 40) ?? '(empty)';
+        throw new Error(`Invalid locking script hex (${hexPreview}...): ${e instanceof Error ? e.message : e}`);
+      }
 
       // Determine unlocking script: manual hex override or build from method call
       let unlockHex = msg.unlockingScriptHex || '';
@@ -564,7 +573,12 @@ self.addEventListener('message', (e: MessageEvent<ExecutionRequest>) => {
         unlockHex = built.unlockHex;
         mockOutputs = built.outputs;
         if (built.statefulLockingScriptHex) {
-          lockingScript = LockingScript.fromHex(built.statefulLockingScriptHex);
+          try {
+            lockingScript = LockingScript.fromHex(built.statefulLockingScriptHex);
+          } catch (e) {
+            const hexPreview = built.statefulLockingScriptHex?.slice(0, 40) ?? '(empty)';
+            throw new Error(`Invalid stateful locking script hex (${hexPreview}...): ${e instanceof Error ? e.message : e}`);
+          }
         }
       }
 

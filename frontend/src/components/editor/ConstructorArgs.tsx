@@ -63,29 +63,31 @@ export function ConstructorArgs() {
   const { constructorArgs, setConstructorArgs } = useEditor();
   const { result } = useCompiler();
 
-  // Auto-detect new properties from the compiled contract AST
-  // and add them to constructorArgs with default values
+  // Auto-detect constructor args from the compiled artifact's ABI.
+  // Only show actual constructor parameters, not all properties
+  // (properties with initializers in the constructor body are not params).
   useEffect(() => {
-    if (!result?.contract) return;
+    if (!result?.artifact) return;
 
-    const contract = result.contract as { properties?: PropertyInfo[] };
-    const props = contract.properties;
-    if (!props || props.length === 0) return;
+    const artifact = result.artifact as {
+      abi?: { constructor?: { params?: Array<{ name: string; type: string }> } };
+    };
+    const params = artifact.abi?.constructor?.params;
+    if (!params || params.length === 0) return;
 
     let changed = false;
     const next = { ...constructorArgs };
 
-    for (const prop of props) {
-      if (!(prop.name in next)) {
-        const typeName = prop.type.name ?? prop.type.kind;
-        next[prop.name] = defaultForType(typeName);
+    for (const param of params) {
+      if (!(param.name in next)) {
+        next[param.name] = defaultForType(param.type);
         changed = true;
       }
     }
 
-    // Remove args that no longer exist in the contract
+    // Remove args that are no longer constructor params
     for (const key of Object.keys(next)) {
-      if (!props.some(p => p.name === key)) {
+      if (!params.some(p => p.name === key)) {
         delete next[key];
         changed = true;
       }
@@ -94,7 +96,7 @@ export function ConstructorArgs() {
     if (changed) {
       setConstructorArgs(next);
     }
-  }, [result?.contract]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [result?.artifact]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const entries = Object.entries(constructorArgs);
   if (entries.length === 0) return null;

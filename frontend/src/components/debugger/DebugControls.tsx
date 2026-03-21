@@ -4,12 +4,14 @@ interface DebugControlsProps {
   playing: boolean;
   speed: number;
   skipInactive: boolean;
+  showAnnotations: boolean;
   onReset: () => void;
   onPrev: () => void;
   onNext: () => void;
   onPlay: () => void;
   onSpeedChange: (speed: number) => void;
   onSkipInactiveChange: (skip: boolean) => void;
+  onShowAnnotationsChange: (show: boolean) => void;
 }
 
 export function DebugControls({
@@ -18,12 +20,14 @@ export function DebugControls({
   playing,
   speed,
   skipInactive,
+  showAnnotations,
   onReset,
   onPrev,
   onNext,
   onPlay,
   onSpeedChange,
   onSkipInactiveChange,
+  onShowAnnotationsChange,
 }: DebugControlsProps) {
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border bg-surface shrink-0">
@@ -83,6 +87,17 @@ export function DebugControls({
           className="accent-accent-500 w-3 h-3"
         />
         <span className="text-[11px] text-text-tertiary">Skip inactive</span>
+      </label>
+
+      {/* Source annotations toggle */}
+      <label className="flex items-center gap-1.5 cursor-pointer" title="Show source line annotations on opcodes">
+        <input
+          type="checkbox"
+          checked={showAnnotations}
+          onChange={(e) => onShowAnnotationsChange(e.target.checked)}
+          className="accent-accent-500 w-3 h-3"
+        />
+        <span className="text-[11px] text-text-tertiary">Annotate</span>
       </label>
 
       {/* Speed slider */}

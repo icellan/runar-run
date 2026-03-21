@@ -6,6 +6,7 @@ import { getOpcodeColor } from '../../lib/opcode-meta';
 interface ScriptPanelProps {
   trace: ExecutionTrace;
   currentStep: number;
+  annotations?: Map<number, string>;
 }
 
 function bytesToHex(bytes: number[]): string {
@@ -56,12 +57,14 @@ interface OpcodeRowProps {
   allDataHex: (string | undefined)[];
   allColors: string[];
   snapshots: OpcodeSnapshot[];
+  annotations?: Map<number, string>;
+  unlockLen: number;
 }
 
 const ROW_HEIGHT = 22;
 
 function OpcodeRow({
-  index, style, entries, currentStep, allOpcodes, allDataHex, allColors, snapshots,
+  index, style, entries, currentStep, allOpcodes, allDataHex, allColors, snapshots, annotations, unlockLen,
 }: RowComponentProps<OpcodeRowProps>) {
   const entry = entries[index]!;
 
@@ -138,11 +141,21 @@ function OpcodeRow({
           {dataHex}
         </span>
       )}
+
+      {(() => {
+        const lockLocalIdx = flatIdx - unlockLen;
+        const annotation = op.context === 'LockingScript' ? annotations?.get(lockLocalIdx) : undefined;
+        return annotation ? (
+          <span className="text-accent-500/50 text-[9px] truncate" title={annotation}>
+            {annotation}
+          </span>
+        ) : null;
+      })()}
     </div>
   );
 }
 
-export function ScriptPanel({ trace, currentStep }: ScriptPanelProps) {
+export function ScriptPanel({ trace, currentStep, annotations }: ScriptPanelProps) {
   const { unlockOpcodes, lockOpcodes, snapshots } = trace;
   const listRef = useListRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -205,13 +218,15 @@ export function ScriptPanel({ trace, currentStep }: ScriptPanelProps) {
     allDataHex,
     allColors,
     snapshots,
-  }), [entries, currentStep, allOpcodes, allDataHex, allColors, snapshots]);
+    annotations,
+    unlockLen: unlockOpcodes.length,
+  }), [entries, currentStep, allOpcodes, allDataHex, allColors, snapshots, annotations, unlockOpcodes.length]);
 
   const totalOpcodes = unlockOpcodes.length + lockOpcodes.length;
 
   // For small scripts, render without virtualization
   if (totalOpcodes <= 200) {
-    return <ScriptPanelSimple trace={trace} currentStep={currentStep} />;
+    return <ScriptPanelSimple trace={trace} currentStep={currentStep} annotations={annotations} />;
   }
 
   return (
@@ -237,7 +252,7 @@ export function ScriptPanel({ trace, currentStep }: ScriptPanelProps) {
 }
 
 /** Simple non-virtualized renderer for small scripts */
-function ScriptPanelSimple({ trace, currentStep }: ScriptPanelProps) {
+function ScriptPanelSimple({ trace, currentStep, annotations }: ScriptPanelProps) {
   const { unlockOpcodes, lockOpcodes, snapshots } = trace;
   const activeRef = useRef<HTMLDivElement>(null);
 
@@ -251,6 +266,8 @@ function ScriptPanelSimple({ trace, currentStep }: ScriptPanelProps) {
   const allOpcodes = useMemo(() => [...unlockOpcodes, ...lockOpcodes], [unlockOpcodes, lockOpcodes]);
   const allDataHex = useMemo(() => precomputeDataHex(allOpcodes), [allOpcodes]);
 
+  const unlockLen = unlockOpcodes.length;
+
   const renderOpcode = (op: ScriptOpcode, flatIndex: number, indent: number) => {
     const active = flatIndex === currentStep;
     const executed = flatIndex <= currentStep;
@@ -258,6 +275,9 @@ function ScriptPanelSimple({ trace, currentStep }: ScriptPanelProps) {
     const hasError = !!snap?.error;
     const isSkipped = !!snap?.skipped;
     const dataHex = allDataHex[flatIndex];
+    // Annotations use locking script local index (flatIndex - unlockOpcodes.length)
+    const lockLocalIdx = flatIndex - unlockLen;
+    const annotation = op.context === 'LockingScript' ? annotations?.get(lockLocalIdx) : undefined;
 
     return (
       <div
@@ -305,6 +325,12 @@ function ScriptPanelSimple({ trace, currentStep }: ScriptPanelProps) {
         {dataHex && !isSkipped && (
           <span className={`text-text-tertiary text-[10px] truncate max-w-[120px] ${!executed ? 'opacity-40' : ''}`}>
             {dataHex}
+          </span>
+        )}
+
+        {annotation && (
+          <span className="text-accent-500/50 text-[9px] truncate" title={annotation}>
+            {annotation}
           </span>
         )}
       </div>
