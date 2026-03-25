@@ -12,6 +12,8 @@ const LANGUAGE_TO_MONACO: Record<Language, string> = {
   python: 'python',
   go: 'go',
   rust: 'rust',
+  zig: 'c',       // closest built-in Monaco language for Zig syntax
+  ruby: 'ruby',
 };
 
 /**

@@ -7,6 +7,8 @@ const LANGUAGES: { value: Language; label: string }[] = [
   { value: 'python', label: 'Python' },
   { value: 'go', label: 'Go' },
   { value: 'rust', label: 'Rust' },
+  { value: 'zig', label: 'Zig' },
+  { value: 'ruby', label: 'Ruby' },
 ];
 
 export function LanguageSelector() {

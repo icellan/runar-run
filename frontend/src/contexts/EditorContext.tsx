@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import { EXAMPLES, type MethodCall } from '../examples';
 import { decodeFromHash } from '../lib/sharing-client';
 
-export type Language = 'typescript' | 'solidity' | 'move' | 'python' | 'go' | 'rust';
+export type Language = 'typescript' | 'solidity' | 'move' | 'python' | 'go' | 'rust' | 'zig' | 'ruby';
 
 interface EditorState {
   source: string;
@@ -34,6 +34,8 @@ const LANGUAGE_EXTENSIONS: Record<Language, string> = {
   python: 'py',
   go: 'go',
   rust: 'rs',
+  zig: 'zig',
+  ruby: 'rb',
 };
 
 const DEFAULT_EXAMPLE = EXAMPLES[0]!;
