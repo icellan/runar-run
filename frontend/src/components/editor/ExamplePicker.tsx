@@ -1,17 +1,27 @@
+import { useMemo } from 'react';
 import { useEditor } from '../../contexts/EditorContext';
 import { EXAMPLES } from '../../examples';
 
 export function ExamplePicker() {
-  const { loadExample } = useEditor();
+  const { language, source, loadExample } = useEditor();
+
+  const filtered = useMemo(
+    () => EXAMPLES.filter((e) => e.language === language),
+    [language],
+  );
+
+  const currentId = useMemo(
+    () => filtered.find((e) => e.source === source)?.id ?? '',
+    [filtered, source],
+  );
 
   return (
     <select
-      defaultValue=""
+      value={currentId}
       onChange={(e) => {
         if (e.target.value) {
           loadExample(e.target.value);
         }
-        e.target.value = '';
       }}
       className="h-7 px-2 text-xs font-medium bg-surface-alt border border-border rounded-md
                  text-text-secondary cursor-pointer outline-none
@@ -23,10 +33,10 @@ export function ExamplePicker() {
         backgroundPosition: 'right 6px center',
       }}
     >
-      <option value="" disabled>
-        Examples
+      <option value="">
+        {filtered.length === 0 ? 'No examples' : 'Examples'}
       </option>
-      {EXAMPLES.map((example) => (
+      {filtered.map((example) => (
         <option key={example.id} value={example.id}>
           {example.name}
         </option>

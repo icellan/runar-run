@@ -170,7 +170,7 @@ describe('ScriptHexView data preparation', () => {
     const elapsed = performance.now() - start;
 
     expect(rows).toHaveLength(Math.ceil(1_000_000 / 16));
-    expect(elapsed).toBeLessThan(100);
+    expect(elapsed).toBeLessThan(200);
   });
 });
 

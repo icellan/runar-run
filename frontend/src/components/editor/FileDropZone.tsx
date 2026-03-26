@@ -8,11 +8,15 @@ const EXT_TO_LANGUAGE: Record<string, Language> = {
   '.runar.py': 'python',
   '.runar.go': 'go',
   '.runar.rs': 'rust',
+  '.runar.zig': 'zig',
+  '.runar.rb': 'ruby',
   '.ts': 'typescript',
   '.sol': 'solidity',
   '.py': 'python',
   '.go': 'go',
   '.rs': 'rust',
+  '.zig': 'zig',
+  '.rb': 'ruby',
 };
 
 function detectLanguage(fileName: string): Language {
@@ -90,7 +94,7 @@ export function FileDropZone() {
       <div className="text-center space-y-2 border-2 border-dashed border-accent-500/40 rounded-xl px-12 py-8">
         <div className="text-accent-400 text-lg font-medium">Drop contract file</div>
         <div className="text-text-secondary text-sm">
-          .runar.ts .runar.sol .runar.move .runar.py .runar.go .runar.rs
+          .runar.ts .runar.sol .runar.move .runar.py .runar.go .runar.rs .runar.zig .runar.rb
         </div>
       </div>
     </div>

@@ -549,4 +549,131 @@ class OraclePriceFeed extends SmartContract {
     },
     description: 'Oracle-verified price feed with real Rabin signature. Price 60000 is signed by the test oracle key and exceeds the 50,000 threshold.',
   },
+  {
+    id: 'zig-p2pkh',
+    name: 'P2PKH (Zig)',
+    language: 'zig',
+    source: `const runar = @import("runar");
+
+/// P2PKH — Pay-to-Public-Key-Hash in Zig.
+///
+/// Locks funds to a public key hash. To unlock, provide a signature and the
+/// public key whose hash160 matches. Demonstrates checkSig and hash160.
+pub const P2PKH = struct {
+    pub const Contract = runar.SmartContract;
+
+    pubKeyHash: runar.Addr,
+
+    pub fn init(pubKeyHash: runar.Addr) P2PKH {
+        return .{ .pubKeyHash = pubKeyHash };
+    }
+
+    pub fn unlock(self: *const P2PKH, sig: runar.Sig, pubKey: runar.PubKey) void {
+        runar.assert(runar.hash160(pubKey) == self.pubKeyHash);
+        runar.assert(runar.checkSig(sig, pubKey));
+    }
+};
+`,
+    constructorArgs: {
+      pubKeyHash: ALICE.pubKeyHash,
+    },
+    methodCall: {
+      method: 'unlock',
+      args: [
+        { type: 'Sig', signer: 'alice' },
+        { type: 'PubKey', value: ALICE.pubKey },
+      ],
+    },
+    description: 'Pay-to-Public-Key-Hash in Zig. Locked to Alice\'s key, unlocks with her real signature.',
+  },
+  {
+    id: 'zig-counter',
+    name: 'Counter (Zig, Stateful)',
+    language: 'zig',
+    source: `const runar = @import("runar");
+
+/// Counter — the simplest stateful contract in Zig.
+///
+/// A counter that persists its value across spending transactions.
+/// Extends StatefulSmartContract for automatic preimage checking and
+/// state continuation.
+pub const Counter = struct {
+    pub const Contract = runar.StatefulSmartContract;
+
+    count: i64 = 0,
+
+    pub fn init(count: i64) Counter {
+        return .{ .count = count };
+    }
+
+    pub fn increment(self: *Counter) void {
+        self.count += 1;
+    }
+
+    pub fn decrement(self: *Counter) void {
+        runar.assert(self.count > 0);
+        self.count -= 1;
+    }
+};
+`,
+    constructorArgs: {
+      count: 0n,
+    },
+    methodCall: {
+      method: 'increment',
+      args: [],
+    },
+    description: 'Simplest stateful contract in Zig: a counter that persists across transactions. Anyone can increment or decrement.',
+  },
+  {
+    id: 'zig-escrow',
+    name: 'Escrow (Zig)',
+    language: 'zig',
+    source: `const runar = @import("runar");
+
+/// Escrow — three-party escrow with two spending paths, written in Zig.
+///
+/// Buyer, seller, and arbiter each have a public key. Funds can be released
+/// (seller+arbiter) or refunded (buyer+arbiter). Demonstrates multi-method
+/// contracts with 2-of-3 signature patterns.
+pub const Escrow = struct {
+    pub const Contract = runar.SmartContract;
+
+    buyer: runar.PubKey,
+    seller: runar.PubKey,
+    arbiter: runar.PubKey,
+
+    pub fn init(buyer: runar.PubKey, seller: runar.PubKey, arbiter: runar.PubKey) Escrow {
+        return .{
+            .buyer = buyer,
+            .seller = seller,
+            .arbiter = arbiter,
+        };
+    }
+
+    pub fn release(self: *const Escrow, sellerSig: runar.Sig, arbiterSig: runar.Sig) void {
+        runar.assert(runar.checkSig(sellerSig, self.seller));
+        runar.assert(runar.checkSig(arbiterSig, self.arbiter));
+    }
+
+    pub fn refund(self: *const Escrow, buyerSig: runar.Sig, arbiterSig: runar.Sig) void {
+        runar.assert(runar.checkSig(buyerSig, self.buyer));
+        runar.assert(runar.checkSig(arbiterSig, self.arbiter));
+    }
+};
+`,
+    constructorArgs: {
+      buyer: ALICE.pubKey,
+      seller: BOB.pubKey,
+      arbiter: CHARLIE.pubKey,
+    },
+    methodCall: {
+      method: 'release',
+      args: [
+        { type: 'Sig', signer: 'bob' },
+        { type: 'Sig', signer: 'charlie' },
+      ],
+    },
+    description: 'Escrow in Zig: buyer=Alice, seller=Bob, arbiter=Charlie. Calls "release" with seller and arbiter signatures.',
+  },
 ];

@@ -12,7 +12,7 @@ const LANGUAGE_TO_MONACO: Record<Language, string> = {
   python: 'python',
   go: 'go',
   rust: 'rust',
-  zig: 'c',       // closest built-in Monaco language for Zig syntax
+  zig: 'zig',     // custom Monarch tokenizer registered in handleBeforeMount
   ruby: 'ruby',
 };
 
@@ -100,6 +100,78 @@ export function CodeEditor() {
   const monacoRef = useRef<typeof import('monaco-editor') | null>(null);
 
   const handleBeforeMount: BeforeMount = (monaco) => {
+    // Register Zig as a custom language with Monarch tokenizer
+    // Keywords sourced from ziglang/zig lib/std/zig/tokenizer.zig Tag enum
+    monaco.languages.register({ id: 'zig' });
+    monaco.languages.setMonarchTokensProvider('zig', {
+      keywords: [
+        'addrspace', 'align', 'allowzero', 'and', 'anyframe', 'anytype',
+        'asm', 'break', 'callconv', 'catch', 'comptime', 'const',
+        'continue', 'defer', 'else', 'enum', 'errdefer', 'error',
+        'export', 'extern', 'fn', 'for', 'if', 'inline',
+        'noalias', 'noinline', 'nosuspend', 'opaque', 'or', 'orelse',
+        'packed', 'pub', 'resume', 'return', 'linksection', 'struct',
+        'suspend', 'switch', 'test', 'threadlocal', 'try', 'union',
+        'unreachable', 'var', 'volatile', 'while',
+      ],
+      typeKeywords: [
+        'i8', 'i16', 'i32', 'i64', 'i128', 'u8', 'u16', 'u32', 'u64', 'u128',
+        'f16', 'f32', 'f64', 'f128', 'usize', 'isize', 'comptime_int', 'comptime_float',
+        'bool', 'void', 'noreturn', 'type', 'anyerror',
+      ],
+      constants: ['true', 'false', 'null', 'undefined'],
+      symbols: /[=><!~?:&|+\-*/^%]+/,
+      tokenizer: {
+        root: [
+          { include: '@whitespace' },
+          [/@[a-zA-Z_]\w*/, 'keyword.other'],
+          [/[a-z_][\w]*/, { cases: {
+            '@keywords': 'keyword',
+            '@typeKeywords': 'type',
+            '@constants': 'constant',
+            '@default': 'identifier',
+          }}],
+          [/[A-Z][\w]*/, 'type.identifier'],
+          [/[{}()[\]]/, '@brackets'],
+          [/\.[\*?]/, 'operator'],
+          [/\.\.\.?/, 'operator'],
+          [/=>/, 'operator'],
+          [/->/, 'operator'],
+          [/@symbols/, 'operator'],
+          [/[.;,]/, 'delimiter'],
+          [/0x[0-9a-fA-F_]+/, 'number.hex'],
+          [/0b[01_]+/, 'number.binary'],
+          [/0o[0-7_]+/, 'number.octal'],
+          [/\d[\d_]*(\.\d[\d_]*)?([eE][+-]?\d[\d_]*)?/, 'number'],
+          [/"([^"\\]|\\.)*"/, 'string'],
+          [/'.{1,2}'/, 'string'],
+          [/\\\\.*$/, 'string'],
+        ],
+        whitespace: [
+          [/[ \t\r\n]+/, 'white'],
+          [/\/\/\/.*$/, 'comment.doc'],
+          [/\/\/.*$/, 'comment'],
+        ],
+      },
+    });
+    monaco.languages.setLanguageConfiguration('zig', {
+      comments: { lineComment: '//' },
+      brackets: [['{', '}'], ['[', ']'], ['(', ')']],
+      autoClosingPairs: [
+        { open: '{', close: '}' },
+        { open: '[', close: ']' },
+        { open: '(', close: ')' },
+        { open: '"', close: '"' },
+        { open: "'", close: "'" },
+      ],
+      surroundingPairs: [
+        { open: '{', close: '}' },
+        { open: '[', close: ']' },
+        { open: '(', close: ')' },
+        { open: '"', close: '"' },
+      ],
+    });
+
     // Disable Monaco's built-in TypeScript diagnostics — we use the Rúnar compiler's own errors
     monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
       noSemanticValidation: true,
