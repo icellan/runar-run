@@ -12,9 +12,9 @@ export interface OpcodeSnapshot {
   opcodeHex: number;
   /** Data pushed by this opcode (if any) */
   data?: number[];
-  /** Main stack state AFTER this opcode executed */
+  /** Main stack state AFTER this opcode executed (only populated for the active step) */
   stack: number[][];
-  /** Alt stack state AFTER this opcode executed */
+  /** Alt stack state AFTER this opcode executed (only populated for the active step) */
   altStack: number[][];
   /** Whether this opcode was skipped (inside a non-taken IF branch) */
   skipped: boolean;
@@ -95,13 +95,15 @@ export type ExecutionRequest =
       /** Typed method call — used to generate real signatures if no hex override */
       methodCall?: MethodCallDef;
     }
-  | { type: 'init' };
+  | { type: 'init' }
+  | { type: 'getStack'; step: number };
 
 // Messages sent FROM the worker
 export type ExecutionResponse =
   | { type: 'ready' }
   | { type: 'trace'; data: ExecutionTrace }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  | { type: 'stackResult'; step: number; stack: number[][]; altStack: number[][] };
 
 /**
  * Manages the execution worker lifecycle.
@@ -149,8 +151,15 @@ export class ExecutionBridge {
     this.worker.postMessage({ type: 'init' } satisfies ExecutionRequest);
   }
 
+  private pendingStackResolve: ((result: { stack: number[][]; altStack: number[][] }) => void) | null = null;
+
   private handleMessage = (e: MessageEvent<ExecutionResponse>) => {
     const msg = e.data;
+    if (msg.type === 'stackResult' && this.pendingStackResolve) {
+      this.pendingStackResolve({ stack: msg.stack, altStack: msg.altStack });
+      this.pendingStackResolve = null;
+      return;
+    }
     if (msg.type === 'trace' && this.pendingResolve) {
       this.pendingResolve(msg.data);
       this.pendingResolve = null;
@@ -180,6 +189,14 @@ export class ExecutionBridge {
         unlockingScriptHex,
         methodCall,
       } satisfies ExecutionRequest);
+    });
+  }
+
+  async getStack(step: number): Promise<{ stack: number[][]; altStack: number[][] }> {
+    await this.ready;
+    return new Promise((resolve) => {
+      this.pendingStackResolve = resolve;
+      this.worker.postMessage({ type: 'getStack', step } satisfies ExecutionRequest);
     });
   }
 

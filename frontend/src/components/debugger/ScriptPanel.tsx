@@ -242,11 +242,6 @@ export function ScriptPanel({ trace, currentStep, annotations }: ScriptPanelProp
         {null}
       </List>
 
-      {trace.error && (
-        <div className="mt-2 px-2 py-1.5 bg-danger/10 border border-danger/20 rounded text-danger text-[11px]">
-          {trace.error}
-        </div>
-      )}
     </div>
   );
 }
@@ -366,11 +361,6 @@ function ScriptPanelSimple({ trace, currentStep, annotations }: ScriptPanelProps
         return el;
       })}
 
-      {trace.error && (
-        <div className="mt-2 px-2 py-1.5 bg-danger/10 border border-danger/20 rounded text-danger text-[11px]">
-          {trace.error}
-        </div>
-      )}
     </div>
   );
 }

@@ -20,10 +20,10 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-window": "^2.2.7",
-    "runar-compiler": "^0.4.1",
-    "runar-ir-schema": "^0.4.1",
-    "runar-lang": "^0.4.1",
-    "runar-testing": "^0.4.1"
+    "runar-compiler": "^0.4.4",
+    "runar-ir-schema": "^0.4.4",
+    "runar-lang": "^0.4.4",
+    "runar-testing": "^0.4.4"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",

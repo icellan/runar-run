@@ -547,11 +547,55 @@ function parseScript(
 // Message handler
 // ---------------------------------------------------------------------------
 
+// Cached execution state for on-demand stack retrieval
+let cachedSpendParams: {
+  lockingScript: LockingScript;
+  unlockingScript: UnlockingScript;
+  outputs: Array<{ satoshis: number; lockingScript: LockingScript }>;
+  lockTime: number;
+} | null = null;
+
 self.addEventListener('message', (e: MessageEvent<ExecutionRequest>) => {
   const msg = e.data;
 
   if (msg.type === 'init') {
     self.postMessage({ type: 'ready' } satisfies ExecutionResponse);
+    return;
+  }
+
+  if (msg.type === 'getStack') {
+    if (!cachedSpendParams) {
+      self.postMessage({ type: 'stackResult', step: msg.step, stack: [], altStack: [] } satisfies ExecutionResponse);
+      return;
+    }
+    try {
+      const { lockingScript: ls, unlockingScript: us, outputs, lockTime } = cachedSpendParams;
+      const spend = new Spend({
+        sourceTXID: MOCK_TXID,
+        sourceOutputIndex: 0,
+        sourceSatoshis: MOCK_SATOSHIS,
+        lockingScript: ls,
+        unlockingScript: us,
+        transactionVersion: MOCK_VERSION,
+        otherInputs: [],
+        outputs,
+        inputIndex: 0,
+        inputSequence: MOCK_SEQUENCE,
+        lockTime,
+      });
+      // Step through to the requested position
+      for (let i = 0; i <= msg.step; i++) {
+        try { if (!spend.step()) break; } catch { break; }
+      }
+      self.postMessage({
+        type: 'stackResult',
+        step: msg.step,
+        stack: spend.stack.map(item => [...item]),
+        altStack: spend.altStack.map(item => [...item]),
+      } satisfies ExecutionResponse);
+    } catch {
+      self.postMessage({ type: 'stackResult', step: msg.step, stack: [], altStack: [] } satisfies ExecutionResponse);
+    }
     return;
   }
 
@@ -600,6 +644,10 @@ self.addEventListener('message', (e: MessageEvent<ExecutionRequest>) => {
         return;
       }
 
+      // Cache params for on-demand stack retrieval
+      const lockTime = msg.methodCall?.mockLocktime ?? 0;
+      cachedSpendParams = { lockingScript, unlockingScript, outputs: mockOutputs, lockTime };
+
       const spend = new Spend({
         sourceTXID: MOCK_TXID,
         sourceOutputIndex: 0,
@@ -611,7 +659,7 @@ self.addEventListener('message', (e: MessageEvent<ExecutionRequest>) => {
         outputs: mockOutputs,
         inputIndex: 0,
         inputSequence: MOCK_SEQUENCE,
-        lockTime: msg.methodCall?.mockLocktime ?? 0,
+        lockTime,
       });
 
       const snapshots: OpcodeSnapshot[] = [];
@@ -642,8 +690,8 @@ self.addEventListener('message', (e: MessageEvent<ExecutionRequest>) => {
             opcode: opName(opcodeNum),
             opcodeHex: opcodeNum,
             data: chunk?.data ? [...chunk.data] : undefined,
-            stack: spend.stack.map(item => [...item]),
-            altStack: spend.altStack.map(item => [...item]),
+            stack: [],   // populated on demand via getStack
+            altStack: [], // populated on demand via getStack
             skipped,
           });
 

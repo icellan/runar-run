@@ -65,6 +65,7 @@ interface DebuggerProps {
   onArgsChange?: (args: MethodArg[]) => void;
   onUnlockScriptChange: (value: string) => void;
   onRerun: () => void;
+  onGetStack?: (step: number) => Promise<{ stack: number[][]; altStack: number[][] }>;
 }
 
 export function Debugger({
@@ -82,9 +83,11 @@ export function Debugger({
   onArgsChange,
   onUnlockScriptChange,
   onRerun,
+  onGetStack,
 }: DebuggerProps) {
   const [currentStep, setCurrentStep] = useState(-1);
   const [playing, setPlaying] = useState(false);
+  const [currentStack, setCurrentStack] = useState<{ stack: number[][]; altStack: number[][] } | null>(null);
   const [speed, setSpeed] = useLocalStorage('runar:debugger:speed', 200);
   const [skipInactive, setSkipInactive] = useLocalStorage('runar:debugger:skipInactive', true);
   const [showAnnotations, setShowAnnotations] = useLocalStorage('runar:debugger:showAnnotations', false);
@@ -123,7 +126,25 @@ export function Debugger({
   }, [showAnnotations, compilerResult?.artifact, source]);
 
   const totalSteps = trace?.snapshots.length ?? 0;
-  const snapshot = currentStep >= 0 ? trace?.snapshots[currentStep] : undefined;
+  const traceSnapshot = currentStep >= 0 ? trace?.snapshots[currentStep] : undefined;
+
+  // Build a full snapshot by merging the trace's lightweight snapshot with the lazy-loaded stack
+  const snapshot = traceSnapshot && currentStack
+    ? { ...traceSnapshot, stack: currentStack.stack, altStack: currentStack.altStack }
+    : traceSnapshot;
+
+  // Fetch stack on demand when currentStep changes
+  useEffect(() => {
+    if (currentStep < 0 || !onGetStack) {
+      setCurrentStack(null);
+      return;
+    }
+    let cancelled = false;
+    onGetStack(currentStep).then(result => {
+      if (!cancelled) setCurrentStack(result);
+    });
+    return () => { cancelled = true; };
+  }, [currentStep, onGetStack]);
 
   /** Find the next non-skipped step forward from `from` */
   const nextActive = useCallback((from: number): number => {
@@ -334,13 +355,18 @@ export function Debugger({
 
       {/* Main debugger area */}
       {hasScript ? (
-        <div className="flex-1 flex min-h-0">
+        <div className="flex-1 flex min-h-0 relative">
           <div className="w-1/2 border-r border-border overflow-auto">
             <ScriptPanel trace={trace} currentStep={currentStep} annotations={annotations} />
           </div>
           <div className="w-1/2 overflow-auto">
             <StackPanel snapshot={snapshot ?? null} />
           </div>
+          {trace?.error && (
+            <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-danger/10 border-t border-danger/20 text-danger text-[11px] max-h-24 overflow-auto backdrop-blur-sm">
+              {trace.error}
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center text-text-tertiary text-sm">
@@ -356,25 +382,23 @@ export function Debugger({
       )}
 
       {/* Status bar */}
-      <div className="flex items-center h-6 px-3 text-xs border-t border-border bg-surface shrink-0">
+      <div className="flex items-center h-6 px-3 text-xs border-t border-border bg-surface shrink-0 overflow-hidden">
         {snapshot ? (
           <>
-            <span className="text-text-tertiary">
+            <span className="text-text-tertiary truncate">
               {snapshot.context === 'UnlockingScript' ? 'Unlock' : 'Lock'} #{snapshot.pc}: {snapshot.opcode}
             </span>
-            <span className={`ml-auto ${snapshot.error ? 'text-danger' : trace?.success ? 'text-success' : 'text-text-tertiary'}`}>
-              {snapshot.error
-                ? `Error: ${snapshot.error.slice(0, 50)}`
-                : trace?.success
-                  ? 'Script valid'
-                  : totalSteps > 0 && currentStep === totalSteps - 1
-                    ? 'Script failed'
-                    : `Step ${currentStep + 1} / ${totalSteps}`}
+            <span className={`ml-auto shrink-0 ${trace?.success ? 'text-success' : 'text-text-tertiary'}`}>
+              {trace?.success
+                ? 'Script valid'
+                : totalSteps > 0 && currentStep === totalSteps - 1
+                  ? 'Script failed'
+                  : `Step ${currentStep + 1} / ${totalSteps}`}
             </span>
           </>
         ) : (
-          <span className="text-text-tertiary">
-            {trace?.error ?? `Step 0 / ${totalSteps}`}
+          <span className="text-text-tertiary truncate">
+            {`Step 0 / ${totalSteps}`}
           </span>
         )}
       </div>

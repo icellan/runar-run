@@ -18,6 +18,8 @@ interface CompilerContextValue {
   errorCount: number;
   warningCount: number;
   compileNow: () => void;
+  progressStage: string;
+  progressPercent: number;
 }
 
 const CompilerContext = createContext<CompilerContextValue | null>(null);
@@ -43,12 +45,19 @@ export function CompilerProvider({ children }: { children: ReactNode }) {
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [status, setStatus] = useState<CompileStatus>('idle');
   const [result, setResult] = useState<SerializedCompileResult | null>(null);
+  const [progressStage, setProgressStage] = useState('');
+  const [progressPercent, setProgressPercent] = useState(0);
 
   // Initialize worker on mount
   useEffect(() => {
-    bridgeRef.current = new CompilerBridge();
+    const bridge = new CompilerBridge();
+    bridge.onProgress = (stage, percent) => {
+      setProgressStage(stage);
+      setProgressPercent(prev => Math.max(prev, percent));
+    };
+    bridgeRef.current = bridge;
     return () => {
-      bridgeRef.current?.terminate();
+      bridge.terminate();
       bridgeRef.current = null;
     };
   }, []);
@@ -60,6 +69,8 @@ export function CompilerProvider({ children }: { children: ReactNode }) {
   ) => {
     if (!bridgeRef.current) return;
     setStatus('compiling');
+    setProgressStage('');
+    setProgressPercent(0);
     try {
       const serializedArgs = Object.keys(args).length > 0 ? serializeArgs(args) : undefined;
       const res = await bridgeRef.current.compile(src, file, serializedArgs);
@@ -98,7 +109,7 @@ export function CompilerProvider({ children }: { children: ReactNode }) {
   const warningCount = result?.diagnostics.filter(d => d.severity === 'warning').length ?? 0;
 
   return (
-    <CompilerContext.Provider value={{ status, result, errorCount, warningCount, compileNow }}>
+    <CompilerContext.Provider value={{ status, result, errorCount, warningCount, compileNow, progressStage, progressPercent }}>
       {children}
     </CompilerContext.Provider>
   );

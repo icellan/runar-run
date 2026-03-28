@@ -86,7 +86,7 @@ function autoArgs(
 }
 
 export function ExecutionTab() {
-  const { result, status } = useCompiler();
+  const { result, status, progressStage, progressPercent } = useCompiler();
   const {
     methodCall: exampleMethodCall,
     unlockScriptHexOverride, setUnlockScriptHexOverride,
@@ -277,6 +277,11 @@ export function ExecutionTab() {
     setUserMethodOverride(method);
   }, []);
 
+  const getStackForStep = useCallback(async (step: number) => {
+    if (!bridgeRef.current || step < 0) return { stack: [] as number[][], altStack: [] as number[][] };
+    return bridgeRef.current.getStack(step);
+  }, []);
+
   if (status === 'idle') {
     return (
       <div className="flex-1 flex items-center justify-center text-text-tertiary text-sm h-full">
@@ -287,8 +292,16 @@ export function ExecutionTab() {
 
   if (status === 'compiling') {
     return (
-      <div className="flex-1 flex items-center justify-center text-text-tertiary text-sm h-full">
-        Compiling...
+      <div className="flex-1 flex flex-col items-center justify-center h-full gap-3">
+        <div className="text-text-tertiary text-sm">
+          {progressStage || 'Compiling...'}
+        </div>
+        <div className="w-48 h-1.5 bg-border rounded-full overflow-hidden">
+          <div
+            className="h-full bg-accent-500 rounded-full transition-all duration-150"
+            style={{ width: `${Math.max(progressPercent, 5)}%` }}
+          />
+        </div>
       </div>
     );
   }
@@ -357,8 +370,11 @@ export function ExecutionTab() {
 
   if (loading && !trace) {
     return (
-      <div className="flex-1 flex items-center justify-center text-text-tertiary text-sm h-full">
-        Executing script...
+      <div className="flex-1 flex flex-col items-center justify-center h-full gap-3">
+        <div className="text-text-tertiary text-sm">Executing script...</div>
+        <div className="w-48 h-1.5 bg-border rounded-full overflow-hidden">
+          <div className="h-full bg-accent-500 rounded-full animate-pulse w-full" />
+        </div>
       </div>
     );
   }
@@ -379,6 +395,7 @@ export function ExecutionTab() {
       onArgsChange={setUserArgsOverride}
       onUnlockScriptChange={setUnlockScriptHexOverride}
       onRerun={runExecution}
+      onGetStack={getStackForStep}
     />
   );
 }

@@ -1,29 +1,17 @@
 /**
  * Compiler Web Worker
  *
- * Runs the runar-compiler inside a Web Worker to avoid blocking the main thread.
- * The ts-morph dependency is replaced by our browser shim via Vite's resolve.alias.
- *
- * The compiler now includes source maps in the artifact automatically when
- * source locations are available (which they are for all supported languages).
+ * Runs each compiler pass individually with yields between them so progress
+ * messages flush to the main thread via postMessage.
  */
 
-import { compile } from 'runar-compiler';
+import {
+  parse, validate, typecheck, lowerToANF,
+  lowerToStack, emit, optimizeStackIR, optimizeEC, foldConstants, assembleArtifact,
+  type CompilerDiagnostic,
+} from 'runar-compiler';
 import type { CompilerRequest, CompilerResponse, SerializedCompileResult } from '../lib/compiler-bridge';
 
-function serializeBigInts(obj: unknown): unknown {
-  if (typeof obj === 'bigint') return obj.toString() + 'n';
-  if (obj === null || obj === undefined) return obj;
-  if (Array.isArray(obj)) return obj.map(serializeBigInts);
-  if (typeof obj === 'object') {
-    const result: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(obj)) {
-      result[key] = serializeBigInts(value);
-    }
-    return result;
-  }
-  return obj;
-}
 
 function deserializeConstructorArgs(
   args: Record<string, string>,
@@ -38,39 +26,149 @@ function deserializeConstructorArgs(
   return result;
 }
 
+function hasErrors(diags: CompilerDiagnostic[]): boolean {
+  return diags.some(d => d.severity === 'error');
+}
+
+function send(msg: CompilerResponse): void {
+  self.postMessage(msg);
+}
+
+function tick(): Promise<void> {
+  return new Promise(r => setTimeout(r, 0));
+}
+
+async function compileWithProgress(source: string, fileName: string, constructorArgs?: Record<string, bigint | boolean | string>): Promise<SerializedCompileResult> {
+  const diagnostics: CompilerDiagnostic[] = [];
+
+  send({ type: 'progress', stage: 'Parsing', percent: 0 });
+  await tick();
+
+  let parseResult: ReturnType<typeof parse>;
+  try {
+    parseResult = parse(source, fileName);
+    diagnostics.push(...parseResult.errors);
+  } catch (e: unknown) {
+    diagnostics.push({ message: e instanceof Error ? e.message : String(e), severity: 'error' } as CompilerDiagnostic);
+    return { anf: null, contract: null, diagnostics, success: false };
+  }
+  if (!parseResult.contract || hasErrors(diagnostics)) {
+    return { anf: null, contract: parseResult.contract, diagnostics, success: false };
+  }
+
+  send({ type: 'progress', stage: 'Validating', percent: 10 });
+  await tick();
+
+  try {
+    const v = validate(parseResult.contract);
+    diagnostics.push(...v.errors, ...v.warnings);
+  } catch (e: unknown) {
+    diagnostics.push({ message: e instanceof Error ? e.message : String(e), severity: 'error' } as CompilerDiagnostic);
+    return { anf: null, contract: parseResult.contract, diagnostics, success: false };
+  }
+  if (hasErrors(diagnostics)) {
+    return { anf: null, contract: parseResult.contract, diagnostics, success: false };
+  }
+
+  send({ type: 'progress', stage: 'Type checking', percent: 20 });
+  await tick();
+
+  try {
+    const tc = typecheck(parseResult.contract);
+    diagnostics.push(...tc.errors);
+  } catch (e: unknown) {
+    diagnostics.push({ message: e instanceof Error ? e.message : String(e), severity: 'error' } as CompilerDiagnostic);
+    return { anf: null, contract: parseResult.contract, diagnostics, success: false };
+  }
+  if (hasErrors(diagnostics)) {
+    return { anf: null, contract: parseResult.contract, diagnostics, success: false };
+  }
+
+  send({ type: 'progress', stage: 'Lowering to ANF', percent: 35 });
+  await tick();
+
+  let anf: ReturnType<typeof lowerToANF>;
+  try {
+    anf = lowerToANF(parseResult.contract);
+  } catch (e: unknown) {
+    diagnostics.push({ message: e instanceof Error ? e.message : String(e), severity: 'error' } as CompilerDiagnostic);
+    return { anf: null, contract: parseResult.contract, diagnostics, success: false };
+  }
+
+  if (constructorArgs) {
+    for (const prop of anf.properties) {
+      if (prop.name in constructorArgs) {
+        prop.initialValue = constructorArgs[prop.name];
+      }
+    }
+  }
+
+  send({ type: 'progress', stage: 'Optimizing', percent: 45 });
+  await tick();
+
+  const folded = foldConstants(anf);
+  const optimized = optimizeEC(folded);
+
+  send({ type: 'progress', stage: 'Stack lowering', percent: 50 });
+  await tick();
+
+  try {
+    const stack = lowerToStack(optimized);
+
+    send({ type: 'progress', stage: 'Peephole optimizing', percent: 55 });
+    await tick();
+
+    for (const m of stack.methods) {
+      m.ops = optimizeStackIR(m.ops);
+    }
+
+    send({ type: 'progress', stage: 'Emitting script', percent: 60 });
+    await tick();
+
+    const emitResult = emit(stack);
+
+    send({ type: 'progress', stage: 'Assembling artifact', percent: 70 });
+    await tick();
+
+    const artifact = assembleArtifact(
+      parseResult.contract, optimized, stack,
+      emitResult.scriptHex, emitResult.scriptAsm,
+      {
+        constructorSlots: emitResult.constructorSlots,
+        codeSeparatorIndex: emitResult.codeSeparatorIndex,
+        codeSeparatorIndices: emitResult.codeSeparatorIndices,
+        includeSourceMap: emitResult.sourceMap.length > 0,
+        sourceMappings: emitResult.sourceMap,
+      },
+    );
+
+    return {
+      anf: optimized,
+      contract: parseResult.contract,
+      diagnostics,
+      success: !hasErrors(diagnostics),
+      artifact,
+      scriptHex: emitResult.scriptHex,
+      scriptAsm: emitResult.scriptAsm,
+    };
+  } catch (e: unknown) {
+    diagnostics.push({ message: e instanceof Error ? e.message : String(e), severity: 'error' } as CompilerDiagnostic);
+    return { anf: optimized, contract: parseResult.contract, diagnostics, success: false };
+  }
+}
+
 self.addEventListener('message', (e: MessageEvent<CompilerRequest>) => {
   const msg = e.data;
 
   if (msg.type === 'init') {
-    self.postMessage({ type: 'ready' } satisfies CompilerResponse);
+    send({ type: 'ready' });
     return;
   }
 
   if (msg.type === 'compile') {
-    try {
-      const constructorArgs = msg.constructorArgs
-        ? deserializeConstructorArgs(msg.constructorArgs)
-        : undefined;
-
-      const result = compile(msg.source, {
-        fileName: msg.fileName,
-        constructorArgs,
-      });
-
-      const serialized: SerializedCompileResult = {
-        anf: serializeBigInts(result.anf),
-        contract: serializeBigInts(result.contract),
-        diagnostics: result.diagnostics,
-        success: result.success,
-        artifact: result.artifact ? serializeBigInts(result.artifact) : undefined,
-        scriptHex: result.scriptHex,
-        scriptAsm: result.scriptAsm,
-      };
-
-      self.postMessage({ type: 'result', data: serialized } satisfies CompilerResponse);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      self.postMessage({ type: 'error', message } satisfies CompilerResponse);
-    }
+    const args = msg.constructorArgs ? deserializeConstructorArgs(msg.constructorArgs) : undefined;
+    compileWithProgress(msg.source, msg.fileName, args)
+      .then(data => send({ type: 'result', data }))
+      .catch(err => send({ type: 'error', message: err instanceof Error ? err.message : String(err) }));
   }
 });

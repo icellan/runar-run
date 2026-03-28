@@ -18,7 +18,8 @@ export type CompilerRequest =
 export type CompilerResponse =
   | { type: 'ready' }
   | { type: 'result'; data: SerializedCompileResult }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  | { type: 'progress'; stage: string; percent: number };
 
 /**
  * Serialized compile result — BigInt values are converted to strings
@@ -41,6 +42,7 @@ export class CompilerBridge {
   private worker: Worker;
   private ready: Promise<void>;
   private pendingResolve: ((result: SerializedCompileResult) => void) | null = null;
+  onProgress: ((stage: string, percent: number) => void) | null = null;
 
   constructor() {
     this.worker = new Worker(
@@ -78,6 +80,10 @@ export class CompilerBridge {
 
   private handleMessage = (e: MessageEvent<CompilerResponse>) => {
     const msg = e.data;
+    if (msg.type === 'progress') {
+      this.onProgress?.(msg.stage, msg.percent);
+      return;
+    }
     if (msg.type === 'result' && this.pendingResolve) {
       this.pendingResolve(msg.data);
       this.pendingResolve = null;
