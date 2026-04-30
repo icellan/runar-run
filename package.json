@@ -10,7 +10,8 @@
     "dev:frontend": "pnpm --filter frontend dev",
     "dev:backend": "pnpm --filter backend dev",
     "build": "pnpm --filter frontend build && pnpm --filter backend build",
-    "check": "pnpm --filter frontend check"
+    "check": "pnpm --filter frontend check",
+    "deploy": "pnpm --filter frontend build && wrangler pages deploy frontend/dist --project-name=runar-run --branch=main --commit-dirty=true"
   },
   "pnpm": {
     "overrides": {}
